@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import codechicken.nei.ServerHandler;
-
 import cpw.mods.fml.common.network.NetworkRegistry;
 
 import buildcraft.api.gates.IAction;
@@ -13,10 +11,8 @@ import buildcraft.api.mj.MjBattery;
 import buildcraft.api.power.IPowerReceptor;
 import buildcraft.api.power.PowerHandler;
 import buildcraft.api.power.PowerHandler.PowerReceiver;
-import buildcraft.core.IMachine;
-import sun.security.jgss.spnego.NegTokenTarg;
 import szkuwa.hcables.HCables;
-import szkuwa.hcables.block.BlockCableHook;
+import szkuwa.hcables.block.BlockCableHookWithLight;
 import szkuwa.hcables.block.BlockGeneratorBC;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -34,7 +30,7 @@ public class TileEntityCableHook extends TileEntityGenericCableHook {
 	protected static final double ENERGY_USAGE = 0.2;
 	
 	public TileEntityCableHook() {
-		// stub
+		super();
 	}
 	
 	@Override

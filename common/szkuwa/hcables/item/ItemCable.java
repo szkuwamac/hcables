@@ -2,14 +2,13 @@ package szkuwa.hcables.item;
 
 import java.util.List;
 
-import codechicken.lib.vec.BlockCoord;
-
 import szkuwa.hcables.HCables;
-import szkuwa.hcables.block.BlockCableHook;
+import szkuwa.hcables.block.BlockCableHookWithLight;
 import szkuwa.hcables.tileentity.TileEntityCableHook;
 import szkuwa.hcables.tileentity.TileEntityGeneratorBC;
 import szkuwa.hcables.tileentity.TileEntityGenericCableHook;
-import szkuwa.hcables.tileentity.TileEntityGenericCableHook.CableConnection;
+import szkuwa.hcables.utils.CableConnectionManager;
+import szkuwa.hcables.utils.Coords;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -22,6 +21,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
 public class ItemCable extends Item {
@@ -66,10 +66,10 @@ public class ItemCable extends Item {
 		}
 	}
 	
-	public BlockCoord getSelected(ItemStack itemStack){
+	public Coords getSelected(ItemStack itemStack){
 		if (itemStack != null && itemStack.stackTagCompound != null && itemStack.stackTagCompound.hasKey("selected") && itemStack.stackTagCompound.getBoolean("selected")){
 			NBTTagCompound tag = itemStack.stackTagCompound;
-			BlockCoord bc = new BlockCoord(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z"));
+			Coords bc = new Coords(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z"));
 			return bc;
 		}
 		return null;
@@ -98,11 +98,12 @@ public class ItemCable extends Item {
 	
 	public boolean onItemUse(ItemStack itemStack, EntityPlayer player, World world, int x, int y, int z, int side, float offsetX, float offsetY, float offsetZ){
 		
-		Item hook = Item.getItemFromBlock(HCables.blockCableHook);		
+		Item hook = Item.getItemFromBlock(HCables.blockCableHook);
+		Item hookWithLight = Item.getItemFromBlock(HCables.blockCableHookWithLight);
 		// lets try to place something from our inventory first
 		for (int i = 0; i < player.inventory.mainInventory.length; i++){
 			ItemStack stack = player.inventory.mainInventory[i];
-			if (stack != null && stack.getItem() == hook){
+			if (stack != null && (stack.getItem() == hook || stack.getItem() == hookWithLight )){
 				// its our cable hook, yosha! lets try to place it
 				boolean placed = stack.tryPlaceItemIntoWorld(player, world, x, y, z, side, offsetX, offsetY, offsetZ);
 				if (placed){
@@ -123,13 +124,13 @@ public class ItemCable extends Item {
 					return true;
 				} else {
 					// if we're not sneaking check if something was selected before on this tool
-					BlockCoord bc = getSelected(itemStack);
+					Coords bc = getSelected(itemStack);
 					if (bc != null){
 						// if it was, try to connect entities
 						TileEntity lastSelected = world.getTileEntity(bc.x, bc.y, bc.z);
 						if (lastSelected instanceof TileEntityGenericCableHook){
 							// if it still is our entity try to connect
-							boolean connected = ((TileEntityGenericCableHook) thisTileEntity).connectEntities((TileEntityGenericCableHook)lastSelected, (TileEntityGenericCableHook)thisTileEntity);
+							boolean connected = CableConnectionManager.connectEntities((TileEntityGenericCableHook)lastSelected, (TileEntityGenericCableHook)thisTileEntity);
 							if (connected){
 								// if everything went fine, decrease tool durability
 								itemStack.setItemDamage(itemStack.getItemDamage()+1);

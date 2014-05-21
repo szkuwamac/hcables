@@ -47,7 +47,7 @@ public class DisconnectCablePacket extends AbstractPacket {
 	public void handleClientSide(EntityPlayer player) {
 		TileEntity te = player.worldObj.getTileEntity(x, y, z);
 		if (te instanceof TileEntityGenericCableHook){
-			((TileEntityGenericCableHook) te).removeConnection(dx, dy, dz);
+			((TileEntityGenericCableHook) te).manager.removeConnection(dx, dy, dz);
 		}
 	}
 

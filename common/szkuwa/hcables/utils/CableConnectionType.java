@@ -1,6 +1,6 @@
 package szkuwa.hcables.utils;
 
-public enum ConnectionType {
+public enum CableConnectionType {
 	INBOUND,
 	OUTBOUND,
 	ANY

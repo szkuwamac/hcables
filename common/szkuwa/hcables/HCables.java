@@ -1,7 +1,10 @@
 package szkuwa.hcables;
 
 import szkuwa.hcables.block.BlockCableHook;
+import szkuwa.hcables.block.BlockCableHookWithLight;
+import szkuwa.hcables.block.BlockGenerator;
 import szkuwa.hcables.block.BlockGeneratorBC;
+import szkuwa.hcables.gui.GuiHandler;
 import szkuwa.hcables.item.ItemCable;
 import szkuwa.hcables.item.ItemCableTool;
 import szkuwa.hcables.packet.DisconnectCablePacket;
@@ -20,7 +23,7 @@ import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
 
-@Mod(modid = "hcables", useMetadata = true, dependencies = "required-after:BuildCraft|Core")
+@Mod(modid = "hcables", useMetadata = true)
 public class HCables {
 	@Instance(value = "hcables")
 	public static HCables instance;
@@ -32,18 +35,25 @@ public class HCables {
 	public static final PacketPipeline packetPipeline = new PacketPipeline();
 	
 	// Blocks
+	public static BlockCableHookWithLight blockCableHookWithLight;
 	public static BlockCableHook blockCableHook;
 	public static BlockGeneratorBC blockGeneratorBC;
+	public static BlockGenerator blockGenerator;
 	
 	// Items
 	public static ItemCableTool itemCableTool;
 	public static ItemCable itemCable;
+	
+	// guis
+	public static final int guiIdGenerator = 0;
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		// create blocks
+		blockCableHookWithLight = BlockCableHookWithLight.create();
 		blockCableHook = BlockCableHook.create();
 		blockGeneratorBC = BlockGeneratorBC.create();
+		blockGenerator = BlockGenerator.create();
 		
 		// create items
 		itemCableTool = ItemCableTool.create();

@@ -1,11 +1,14 @@
 package szkuwa.hcables;
 
-import szkuwa.hcables.block.BlockCableHook;
+import szkuwa.hcables.block.BlockCableHookWithLight;
+import szkuwa.hcables.gui.GuiHandler;
 import szkuwa.hcables.item.ItemCable;
-import szkuwa.hcables.tileentity.TileEntityGenericCableHook.CableConnection;
+import szkuwa.hcables.tileentity.TileEntityCableHook;
+import szkuwa.hcables.tileentity.TileEntityGenerator;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
+import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 
 public class CommonProxy {
@@ -47,6 +50,8 @@ public class CommonProxy {
 	}
 	
 	public void load(){
-		// stub
+		NetworkRegistry.INSTANCE.registerGuiHandler(HCables.instance, new GuiHandler());
+		
+		GameRegistry.registerTileEntity(TileEntityCableHook.class, "tileEntityCableHook");
 	}
 }

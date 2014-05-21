@@ -6,8 +6,7 @@ import org.lwjgl.opengl.GL11;
 import szkuwa.hcables.HCables;
 import szkuwa.hcables.item.ItemCable;
 import szkuwa.hcables.tileentity.TileEntityGenericCableHook;
-import szkuwa.hcables.tileentity.TileEntityGenericCableHook.CableConnection;
-import szkuwa.hcables.utils.ConnectionType;
+import szkuwa.hcables.utils.CableConnectionType;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -15,6 +14,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -72,11 +72,18 @@ public class TESRCableHook extends TileEntitySpecialRenderer{
 		}
 	}
 	
-	private void drawHookModel(int side){ this.drawHookModel(side, 0, 0, 0); }
-	private void drawHookModel(int side, double x, double y, double z){
+	private void drawHookModel(int side, boolean alpha){ this.drawHookModel(side, 0, 0, 0, alpha); }
+	private void drawHookModel(int side, double x, double y, double z, boolean alpha){
 		GL11.glTranslated(x, y, z);
 		GL11.glTranslated(1, 0, 0);
 		bindTexture(texture);
+		
+		boolean wasAlpha = GL11.glIsEnabled(GL11.GL_BLEND);
+		if (alpha){
+			GL11.glEnable(GL11.GL_BLEND);
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+			GL11.glColor4f(0, 0, 0, 0.5F);
+		}
 		
 		// model specific transformation etc
 		switch (side){
@@ -139,6 +146,10 @@ public class TESRCableHook extends TileEntitySpecialRenderer{
 			}
 		}
 		
+		if (alpha && !wasAlpha){
+			GL11.glDisable(GL11.GL_BLEND);
+		}
+		
 		GL11.glTranslated(-1, 0, 0);
 		GL11.glTranslated(-x, -y, -z);
 	}
@@ -175,8 +186,8 @@ public class TESRCableHook extends TileEntitySpecialRenderer{
 		return Math.sqrt(x*x + y*y + z*z);
 	}
 	
-	private void drawConnection(TileEntity source, TileEntity destination){ this.drawConnection(source.getBlockMetadata(), source.xCoord, source.yCoord, source.zCoord, destination.getBlockMetadata(), destination.xCoord, destination.yCoord, destination.zCoord); }
-	private void drawConnection(int aside, double ax, double ay, double az, int bside, double bx, double by, double bz){
+	private void drawConnection(TileEntity source, TileEntity destination, boolean alpha){ this.drawConnection(source.getBlockMetadata(), source.xCoord, source.yCoord, source.zCoord, destination.getBlockMetadata(), destination.xCoord, destination.yCoord, destination.zCoord, alpha); }
+	private void drawConnection(int aside, double ax, double ay, double az, int bside, double bx, double by, double bz, boolean alpha){
 		double startx = getSideAdjustmentX(aside);
 		double starty = getSideAdjustmentY(aside);
 		double startz = getSideAdjustmentZ(aside);
@@ -193,9 +204,16 @@ public class TESRCableHook extends TileEntitySpecialRenderer{
 		if (isTexture2d) { GL11.glDisable(GL11.GL_TEXTURE_2D); }
 		GL11.glLineWidth(3F);
 		
+		boolean wasAlpha = GL11.glIsEnabled(GL11.GL_BLEND);
+		if (alpha){
+			GL11.glEnable(GL11.GL_BLEND);
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+			GL11.glColor4f(0, 0, 0, 0.5F);
+		}
+		
 		GL11.glBegin(GL11.GL_LINE_STRIP);
 //			if (this.getDistance(startx, starty, startz, endx, endy, endz) < 10){
-				GL11.glColor3f(0, 0.1F, 0.1F);
+				GL11.glColor4f(0, 0.1F, 0.1F, 0.5F);
 //			} else {
 //				GL11.glColor3f(1F, 0.1F, 0.1F);
 //			}
@@ -206,18 +224,22 @@ public class TESRCableHook extends TileEntitySpecialRenderer{
 		if (isTexture2d) { GL11.glEnable(GL11.GL_TEXTURE_2D); }
 		GL11.glLineWidth(lineWidth);
 		
+		if (alpha && !wasAlpha){
+			GL11.glDisable(GL11.GL_BLEND);
+		}
+		
 		GL11.glPopMatrix();
 	}
 	
 	private void drawConnections(TileEntity tileEntity){
 		if (tileEntity instanceof TileEntityGenericCableHook){
 			TileEntityGenericCableHook source = (TileEntityGenericCableHook)tileEntity;
-			Iterator<CableConnection> it = source.connections.iterator();
+			Iterator<szkuwa.hcables.utils.CableConnection> it = source.manager.connections.iterator();
 			while (it.hasNext()){
-				CableConnection item = it.next();
+				szkuwa.hcables.utils.CableConnection item = it.next();
 				TileEntity destination = source.getWorldObj().getTileEntity(item.x, item.y, item.z);
-				if (destination instanceof TileEntityGenericCableHook && item.type == ConnectionType.OUTBOUND){
-					this.drawConnection(source, destination);
+				if (destination instanceof TileEntityGenericCableHook && item.type == CableConnectionType.OUTBOUND){
+					this.drawConnection(source, destination, false);
 				}
 			}
 		}
@@ -244,7 +266,7 @@ public class TESRCableHook extends TileEntitySpecialRenderer{
 							// it is... lets roll
 							
 							// lets check if our player is "watching" something
-							MovingObjectPosition mop = player.rayTrace(10, partialTick);
+							MovingObjectPosition mop = player.rayTrace(5, partialTick);
 							if (mop != null && mop.typeOfHit == MovingObjectType.BLOCK && mop.sideHit >= 2 && mop.sideHit <= 5){
 								// he is and he's looking at some kind of block on sides that are supported by our hooks
 								// so lets try and draw a connection and hook model
@@ -267,8 +289,8 @@ public class TESRCableHook extends TileEntitySpecialRenderer{
 									return;
 								}
 								
-								this.drawHookModel(mop.sideHit, dx - tileEntity.xCoord, dy - tileEntity.yCoord, dz - tileEntity.zCoord);
-								this.drawConnection(tileEntity.getBlockMetadata(), tileEntity.xCoord, tileEntity.yCoord, tileEntity.zCoord, mop.sideHit, dx, dy, dz);
+								this.drawHookModel(mop.sideHit, dx - tileEntity.xCoord, dy - tileEntity.yCoord, dz - tileEntity.zCoord, true);
+								this.drawConnection(tileEntity.getBlockMetadata(), tileEntity.xCoord, tileEntity.yCoord, tileEntity.zCoord, mop.sideHit, dx, dy, dz, true);
 							}
 							
 						}
@@ -283,7 +305,7 @@ public class TESRCableHook extends TileEntitySpecialRenderer{
 		GL11.glPushMatrix();
 		GL11.glTranslated(x, y, z); // lets set this so all our draw* will use (0,0,0) as starting point
 		
-		this.drawHookModel(tileEntity.getBlockMetadata());
+		this.drawHookModel(tileEntity.getBlockMetadata(), false);
 		this.drawConnections(tileEntity);
 		this.drawPlayerConnection(tileEntity, partialTick);
 		
